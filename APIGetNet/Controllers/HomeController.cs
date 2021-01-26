@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -49,23 +50,26 @@ namespace APIGetNet.Controllers
         public async Task<Tokenizacao> Tokenizacao(string Numero_Do_Cartao)
         {
             var tokenDeAutoricacao = Autenticacao().Result.Token_Acesso;
-            //var data = new Dictionary<string, string>();
-            //data.Add("card_number", "5155901222280001");
-            //data.Add("customer_id", "customer_21081826");
-            object data = new
-            {
-                // card_number = "5155901222280001",
-                card_number = Numero_Do_Cartao,
-                customer_id = "customer_21081826"
-            };
+            var data = new Dictionary<string, string>();
+            // data.Add("card_number", "5155901222280001");
+            data.Add("card_number", Numero_Do_Cartao);
+            data.Add("customer_id", "customer_21081826");
 
             var tokenizacao = new Tokenizacao();
-            tokenizacao.StatusCode = (tokenDeAutoricacao != null) ? tokenDeAutoricacao : tokenizacao.StatusCode;
-            using (var client = new HttpClient())
+            tokenizacao.Access_token = (tokenDeAutoricacao != null) ? tokenDeAutoricacao : tokenizacao.Access_token;
+
+            using (
+                var client = new HttpClient(
+                    new HttpClientHandler
+                    {
+                        AutomaticDecompression = DecompressionMethods.GZip
+                                         | DecompressionMethods.Deflate
+                    })
+                )
             {
                 string APIUrlBase = "https://api-sandbox.getnet.com.br/v1/tokens/card";
 
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + tokenDeAutoricacao);
+                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + tokenizacao.Access_token);
                 var jsonObject = JsonConvert.SerializeObject(data);
                 using (var request = new StringContent(jsonObject))
                 {
@@ -74,10 +78,17 @@ namespace APIGetNet.Controllers
 
                     var response = await client.PostAsync(APIUrlBase, request);
                     tokenizacao.StatusCode = response.ToString().Substring(0, 15);
-
-                    string conteudo = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    dynamic result = JsonConvert.DeserializeObject(conteudo.ToString());
-                    tokenizacao.Token_Cartao = result.number_token;
+                    try
+                    {
+                        // HttpClient Content.ReadAsStringAsync()
+                        string conteudo = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                        dynamic result = JsonConvert.DeserializeObject(conteudo.ToString());
+                        tokenizacao.Token_Cartao = result.number_token;
+                    }
+                    catch
+                    {
+                        tokenizacao.Token_Cartao = tokenizacao.Token_Cartao;
+                    }
                 }
             }
             // Numero do Cartão de Credito convertido em token
