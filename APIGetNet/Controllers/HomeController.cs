@@ -13,6 +13,8 @@ namespace APIGetNet.Controllers
     [ApiController]
     public class HomeController : ControllerBase
     {
+        PagamentoPorBoleto pagamentoPorBoletoMock = new PagamentoPorBoleto();
+
         [HttpPost]
         [Route("Autenticacao")]
         public async Task<Autenticacao> Autenticacao()
@@ -78,22 +80,55 @@ namespace APIGetNet.Controllers
 
                     var response = await client.PostAsync(APIUrlBase, request);
                     tokenizacao.StatusCode = response.ToString().Substring(0, 15);
-                    try
-                    {
-                        // HttpClient Content.ReadAsStringAsync()
-                        string conteudo = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                        dynamic result = JsonConvert.DeserializeObject(conteudo.ToString());
-                        tokenizacao.Token_Cartao = result.number_token;
-                    }
-                    catch
-                    {
-                        tokenizacao.Token_Cartao = tokenizacao.Token_Cartao;
-                    }
+
+                    string conteudo = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                    dynamic result = JsonConvert.DeserializeObject(conteudo.ToString());
+                    tokenizacao.Token_Cartao = result.number_token;
                 }
             }
             // Numero do Cartão de Credito convertido em token
             return tokenizacao;
         }
+
+        [HttpPost]
+        [Route("PagamentoPorBoleto")]
+        public async Task<PagamentoPorBoletoOutput> PagamentoPorBoleto()
+        {
+            var pagamentoPorBoletoOutput = new PagamentoPorBoletoOutput();
+            var tokenDeAutoricacao = Autenticacao().Result.Token_Acesso;
+            pagamentoPorBoletoMock.MockContextPagamentoPorBoleto();
+            var data = pagamentoPorBoletoMock;
+
+            using (
+                var client = new HttpClient(
+                    new HttpClientHandler
+                    {
+                        AutomaticDecompression = DecompressionMethods.GZip
+                                         | DecompressionMethods.Deflate
+                    })
+                )
+            {
+                string APIUrlBase = "https://api-sandbox.getnet.com.br/v1/payments/boleto";
+
+                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + tokenDeAutoricacao);
+                var jsonObject = JsonConvert.SerializeObject(data, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
+
+                using (var request = new StringContent(jsonObject))
+                {
+                    request.Headers.Clear();
+                    request.Headers.Add("Content-Type", "application/json; charset=utf-8");
+
+                    var response = await client.PostAsync(APIUrlBase, request);
+                    pagamentoPorBoletoOutput.StatusCode = response.ToString().Substring(0, 15);
+
+                    // HttpClient Content.ReadAsStringAsync()
+                    string conteudo = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                    dynamic result = JsonConvert.DeserializeObject(conteudo.ToString());
+                    pagamentoPorBoletoOutput.Uri = pagamentoPorBoletoOutput.Uri + result.boleto._links[0].href;
+                }
+            }
+            // Numero do Cartão de Credito convertido em token
+            return pagamentoPorBoletoOutput;
+        }
     }
 }
-
