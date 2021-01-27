@@ -47,7 +47,6 @@ namespace APIGetNet.Models
             this.customer = customerMock;
         }
 
-
         public void MockContextPagamentoPorBoletoCompleto()
         {
             var billing_addressMock = new Billing_address();
@@ -82,6 +81,18 @@ namespace APIGetNet.Models
             this.order = orderMock;
             this.boleto = boletoMock;
             this.customer = customerMock;
+        }
+
+        public void StringForNull()
+        {
+            seller_id = (seller_id != "string") ? seller_id : null;
+            amount = (amount != "string") ? amount : null;
+            currency = (currency != "string") ? currency : null;
+
+            order.StringForNull();
+            boleto.StringForNull();
+            customer.StringForNull();
+            customer.billing_address.StringForNull();
         }
 
     }

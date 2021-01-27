@@ -22,5 +22,15 @@ namespace APIGetNet.Models
         [Required]
         public string postal_code { get; set; }
 
+        public void StringForNull()
+        {
+            street = (street != "string") ? street : null;
+            number = (number != "string") ? number : null;
+            complement = (complement != "string") ? complement : null;
+            district = (district != "string") ? district : null;
+            city = (city != "string") ? city : null;
+            state = (state != "string") ? state : null;
+            postal_code = (postal_code != "string") ? postal_code : null;
+        }
     }
 }

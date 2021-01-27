@@ -38,9 +38,12 @@ namespace APIGetNet.Controllers
                     var response = await client.PostAsync(APIUrlBase, request);
                     autenticacao.StatusCode = response.ToString().Substring(0, 15);
 
-                    string conteudo = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    dynamic result = JsonConvert.DeserializeObject(conteudo);
-                    autenticacao.Token_Acesso = result.access_token;
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string conteudo = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                        dynamic result = JsonConvert.DeserializeObject(conteudo);
+                        autenticacao.Token_Acesso = result.access_token;
+                    }
                 }
             }
 
@@ -80,10 +83,12 @@ namespace APIGetNet.Controllers
 
                     var response = await client.PostAsync(APIUrlBase, request);
                     tokenizacao.StatusCode = response.ToString().Substring(0, 15);
-
-                    string conteudo = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    dynamic result = JsonConvert.DeserializeObject(conteudo.ToString());
-                    tokenizacao.Token_Cartao = result.number_token;
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string conteudo = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                        dynamic result = JsonConvert.DeserializeObject(conteudo.ToString());
+                        tokenizacao.Token_Cartao = result.number_token;
+                    }
                 }
             }
             // Numero do Cartão de Credito convertido em token
@@ -92,12 +97,13 @@ namespace APIGetNet.Controllers
 
         [HttpPost]
         [Route("PagamentoPorBoleto")]
-        public async Task<PagamentoPorBoletoOutput> PagamentoPorBoleto()
+        public async Task<PagamentoPorBoletoOutput> PagamentoPorBoleto([FromBody] PagamentoPorBoleto pagamentoPorBoleto)
         {
             var pagamentoPorBoletoOutput = new PagamentoPorBoletoOutput();
             var tokenDeAutoricacao = Autenticacao().Result.Token_Acesso;
-            pagamentoPorBoletoMock.MockContextPagamentoPorBoleto();
-            var data = pagamentoPorBoletoMock;
+            // pagamentoPorBoletoMock.MockContextPagamentoPorBoleto();
+            pagamentoPorBoleto.StringForNull();
+            var data = pagamentoPorBoleto;
 
             using (
                 var client = new HttpClient(
@@ -121,10 +127,12 @@ namespace APIGetNet.Controllers
                     var response = await client.PostAsync(APIUrlBase, request);
                     pagamentoPorBoletoOutput.StatusCode = response.ToString().Substring(0, 15);
 
-                    // HttpClient Content.ReadAsStringAsync()
-                    string conteudo = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    dynamic result = JsonConvert.DeserializeObject(conteudo.ToString());
-                    pagamentoPorBoletoOutput.Uri = pagamentoPorBoletoOutput.Uri + result.boleto._links[0].href;
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string conteudo = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                        dynamic result = JsonConvert.DeserializeObject(conteudo.ToString());
+                        pagamentoPorBoletoOutput.Uri = pagamentoPorBoletoOutput.Uri + result.boleto._links[0].href;
+                    }
                 }
             }
             // Numero do Cartão de Credito convertido em token

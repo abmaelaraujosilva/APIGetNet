@@ -13,5 +13,14 @@ namespace APIGetNet.Models
         public string instructions { get; set; }
         public string provider { get; set; }
 
+        public void StringForNull()
+        {
+            our_number = (our_number != "string") ? our_number : null;
+            document_number = (document_number != "string") ? document_number : null;
+            expiration_date = (expiration_date != "string") ? expiration_date : null;
+            instructions = (instructions != "string") ? instructions : null;
+            provider = (provider != "string") ? provider : null;
+        }
+
     }
 }
